@@ -1,0 +1,38 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="row g-3">
+  <div class="col-md-6">
+    <label for="nombre" class="form-label">Nombre</label>
+    <input id="nombre" type="text" class="form-control" formControlName="nombre" />
+    @if (form.controls.nombre.invalid && form.controls.nombre.touched) {
+      <div class="form-text text-danger">El nombre debe tener al menos 3 caracteres.</div>
+    }
+  </div>
+
+  <div class="col-md-6">
+    <label for="cargo" class="form-label">Cargo</label>
+    <input id="cargo" type="text" class="form-control" formControlName="cargo" />
+    @if (form.controls.cargo.invalid && form.controls.cargo.touched) {
+      <div class="form-text text-danger">El cargo debe tener al menos 3 caracteres.</div>
+    }
+  </div>
+
+  <div class="col-md-6">
+    <label for="departamento" class="form-label">Departamento</label>
+    <input id="departamento" type="text" class="form-control" formControlName="departamento" />
+    @if (form.controls.departamento.invalid && form.controls.departamento.touched) {
+      <div class="form-text text-danger">El departamento debe tener al menos 3 caracteres.</div>
+    }
+  </div>
+
+  <div class="col-md-6">
+    <label for="sueldo" class="form-label">Sueldo</label>
+    <input id="sueldo" type="number" class="form-control" formControlName="sueldo" min="0.01" step="0.01" />
+    @if (form.controls.sueldo.invalid && form.controls.sueldo.touched) {
+      <div class="form-text text-danger">El sueldo debe ser un número positivo.</div>
+    }
+  </div>
+
+  <div class="col-12 d-flex gap-2">
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <button type="button" class="btn btn-outline-secondary" (click)="onCancel()">Cancelar</button>
+  </div>
+</form>

@@ -1,0 +1,537 @@
+{
+  "info": {
+    "_postman_id": "b1e6c2f0-6e1a-4b3a-9f0a-practica04empleados",
+    "name": "Practica 04 - CRUD Empleados",
+    "description": "Colección para el backend Express + Mongoose de `backend/` (Unidad 2 - Arquitectura y Patrones de Diseño de APIs).\n\nRefleja el estado actual del proyecto tras la reestructuración a pnpm/ESM/TS estricto:\n- **Reto 1 (Patrón Repository)**: el controlador solo conoce `EmployeeRepository`, nunca Mongoose directamente.\n- **Reto 2 (DTO + Response Wrapper)**: validación perimetral con Zod (`employee.dto.ts`, `z.strictObject` — rechaza campos extra) y todas las respuestas con cuerpo bajo el sobre `{ success, data, message }` / `{ success:false, data:null, message, errors }`. El único caso fuera del sobre es `204 No Content` (por definición, sin cuerpo).\n- **Hardening**: `helmet`, `cors`, `GET /api/v1/health` y un middleware 404 uniforme para rutas inexistentes.\n\nUsa el entorno `Practica 04 - Local` (variable `baseUrl = http://localhost:3000/api/v1`). Cada request incluye un script de **Tests** (pestaña *Test results* en Postman) que valida código de estado y forma del cuerpo; la carpeta `Empleados` está pensada para ejecutarse en orden con el **Collection Runner** (Crear → Obtener → Actualizar → Eliminar), ya que 'Crear empleado' guarda el `id` real en la variable de colección `empleadoId` que usan los siguientes requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Aserciones comunes a toda la colección: toda respuesta con cuerpo debe",
+          "// llegar bajo el Response Wrapper, salvo el 204 (sin cuerpo por RFC 9110).",
+          "if (pm.response.code !== 204) {",
+          "  pm.test('Content-Type es application/json', function () {",
+          "    pm.response.to.have.header('Content-Type');",
+          "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+          "  });",
+          "",
+          "  pm.test('El cuerpo respeta el Response Wrapper', function () {",
+          "    const body = pm.response.json();",
+          "    pm.expect(body).to.have.property('success').that.is.a('boolean');",
+          "    if (body.success) {",
+          "      pm.expect(body).to.have.property('data');",
+          "      pm.expect(body).to.have.property('message').that.is.a('string');",
+          "    } else {",
+          "      pm.expect(body).to.have.property('data').that.is.null;",
+          "      pm.expect(body).to.have.property('message').that.is.a('string');",
+          "      pm.expect(body).to.have.property('errors').that.is.an('array');",
+          "    }",
+          "  });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "empleadoId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Sistema",
+      "item": [
+        {
+          "name": "Estado del servicio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "GET /api/v1/health\n\nComprueba que el proceso está arriba y el estado de la conexión a MongoDB (`getDatabaseStatus()` en `config/database.ts`)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Reporta database conectada', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.data).to.have.property('status', 'ok');",
+                  "  pm.expect(body.data).to.have.property('database', 'connected');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Empleados",
+      "item": [
+        {
+          "name": "Listar empleados",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/empleados",
+              "host": ["{{baseUrl}}"],
+              "path": ["empleados"]
+            },
+            "description": "GET /api/v1/empleados\n\nController → `repo.findAll()`.\n\nRespuesta (200):\n```json\n{ \"success\": true, \"data\": [ { \"id\": \"...\", \"nombre\": \"...\", \"cargo\": \"...\", \"departamento\": \"...\", \"sueldo\": 4500 } ], \"message\": \"Empleados obtenidos\" }\n```"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('data es un arreglo', function () {",
+                  "  pm.expect(pm.response.json().data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear empleado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Andrés Mendoza\",\n  \"cargo\": \"Arquitecto de Software\",\n  \"departamento\": \"Innovación\",\n  \"sueldo\": 4500\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/empleados",
+              "host": ["{{baseUrl}}"],
+              "path": ["empleados"]
+            },
+            "description": "POST /api/v1/empleados\n\nValidación previa: `createEmployeeSchema` (Zod, `z.strictObject` — rechaza campos extra):\n- `nombre`, `cargo`, `departamento`: `min(3)`\n- `sueldo`: número positivo\n\nRespuesta verificada (**201 Created**), con cabecera `Location: /api/v1/empleados/<id>`. El script de test guarda el `id` creado en la variable de colección `empleadoId` para los siguientes requests."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201 Created', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Header Location apunta al recurso creado', function () {",
+                  "  pm.response.to.have.header('Location');",
+                  "  pm.expect(pm.response.headers.get('Location')).to.match(/^\\/api\\/v1\\/empleados\\/[0-9a-fA-F]{24}$/);",
+                  "});",
+                  "",
+                  "pm.test('data trae el empleado creado con id', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.data).to.have.property('id').that.matches(/^[0-9a-fA-F]{24}$/);",
+                  "  pm.expect(body.data).to.include({",
+                  "    nombre: 'Andrés Mendoza',",
+                  "    cargo: 'Arquitecto de Software',",
+                  "    departamento: 'Innovación',",
+                  "    sueldo: 4500",
+                  "  });",
+                  "  pm.collectionVariables.set('empleadoId', body.data.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear empleado - datos inválidos (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"An\",\n  \"cargo\": \"Developer\",\n  \"departamento\": \"TI\",\n  \"sueldo\": -200\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/empleados",
+              "host": ["{{baseUrl}}"],
+              "path": ["empleados"]
+            },
+            "description": "Petición de inyección inválida (activa el DTO), tal como la documenta el README del proyecto.\n\nRespuesta verificada (**400 Bad Request**), cortada por el middleware de validación antes de tocar el controlador."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('errors detalla los 3 campos inválidos', function () {",
+                  "  const body = pm.response.json();",
+                  "  const campos = body.errors.map((e) => e.field).sort();",
+                  "  pm.expect(campos).to.eql(['departamento', 'nombre', 'sueldo']);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear empleado - campo extra no permitido (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Andrés Mendoza\",\n  \"cargo\": \"Arquitecto de Software\",\n  \"departamento\": \"Innovación\",\n  \"sueldo\": 4500,\n  \"extra\": \"no permitido\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/empleados",
+              "host": ["{{baseUrl}}"],
+              "path": ["empleados"]
+            },
+            "description": "`createEmployeeSchema` usa `z.strictObject`, así que cualquier propiedad fuera del esquema (`extra`) hace fallar la validación aunque el resto del payload sea válido.\n\nRespuesta verificada: **400 Bad Request**."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Rechazado por strictObject', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.message).to.eql('Datos inválidos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Obtener empleado por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/empleados/{{empleadoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["empleados", "{{empleadoId}}"]
+            },
+            "description": "GET /api/v1/empleados/:id\n\nValidación previa: `idParamSchema` (Zod) exige un ObjectId de 24 hex. Usa el `empleadoId` guardado por 'Crear empleado'.\n\nRespuesta verificada: **200** con el empleado."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Devuelve el id solicitado', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.data.id).to.eql(pm.collectionVariables.get('empleadoId'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Obtener empleado - id con formato inválido (400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/empleados/no-es-un-id",
+              "host": ["{{baseUrl}}"],
+              "path": ["empleados", "no-es-un-id"]
+            },
+            "description": "`idParamSchema` exige un ObjectId de 24 caracteres hexadecimales; `no-es-un-id` no cumple el patrón y la petición ni siquiera llega al controlador.\n\nRespuesta verificada: **400 Bad Request**."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error de formato en el campo id', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.errors[0].field).to.eql('id');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Obtener empleado - no existe (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/empleados/000000000000000000000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["empleados", "000000000000000000000000"]
+            },
+            "description": "Id con formato de ObjectId válido pero que no existe en la colección.\n\nRespuesta verificada: **404 Not Found** con el Response Wrapper (`success:false`)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404 Not Found', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Mensaje de empleado no encontrado', function () {",
+                  "  pm.expect(pm.response.json().message).to.eql('Empleado no encontrado');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar empleado",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cargo\": \"Arquitecto de Software Senior\",\n  \"sueldo\": 5200\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/empleados/{{empleadoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["empleados", "{{empleadoId}}"]
+            },
+            "description": "PUT /api/v1/empleados/:id\n\nValidación previa: `idParamSchema` sobre `:id` + `updateEmployeeSchema` (el mismo esquema de creación pero `.partial()`: puedes enviar solo los campos que cambian, como en este ejemplo).\n\nRespuesta verificada: **200** con el recurso actualizado."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Se actualizaron solo los campos enviados', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.data.cargo).to.eql('Arquitecto de Software Senior');",
+                  "  pm.expect(body.data.sueldo).to.eql(5200);",
+                  "  pm.expect(body.data.nombre).to.eql('Andrés Mendoza');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar empleado - no existe (404)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sueldo\": 6000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/empleados/000000000000000000000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["empleados", "000000000000000000000000"]
+            },
+            "description": "Actualiza un id con formato válido pero inexistente.\n\nRespuesta verificada: **404 Not Found**."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404 Not Found', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar empleado",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/empleados/{{empleadoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["empleados", "{{empleadoId}}"]
+            },
+            "description": "DELETE /api/v1/empleados/:id\n\nRespuesta verificada: **204 No Content**, sin cuerpo (por RFC 9110 un 204 no lleva body — es la única respuesta fuera del Response Wrapper)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204 No Content', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "pm.test('El cuerpo va vacío', function () {",
+                  "  pm.expect(pm.response.text()).to.have.lengthOf(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar empleado - ya no existe (404)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/empleados/{{empleadoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["empleados", "{{empleadoId}}"]
+            },
+            "description": "Repite el DELETE sobre el mismo `empleadoId`, ya eliminado por el request anterior.\n\nRespuesta verificada: **404 Not Found** con el Response Wrapper."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404 Not Found', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Mensaje de empleado no encontrado', function () {",
+                  "  pm.expect(pm.response.json().message).to.eql('Empleado no encontrado');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Errores",
+      "item": [
+        {
+          "name": "Ruta inexistente (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ruta-que-no-existe",
+              "host": ["{{baseUrl}}"],
+              "path": ["ruta-que-no-existe"]
+            },
+            "description": "Cualquier ruta bajo `/api/v1` que no coincida con un handler cae en `notFoundMiddleware`, que devuelve el 404 dentro del mismo Response Wrapper en vez del HTML por defecto de Express."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404 Not Found', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Mensaje incluye método y ruta', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.message).to.include('GET');",
+                  "  pm.expect(body.message).to.include('/api/v1/ruta-que-no-existe');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

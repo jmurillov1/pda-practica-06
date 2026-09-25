@@ -1,0 +1,40 @@
+# Dependencias
+node_modules/
+
+# Builds
+dist/
+build/
+out-tsc/
+*.tsbuildinfo
+
+# Angular
+.angular/
+
+# Cobertura de tests
+coverage/
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+
+# Editores / IDEs
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Artillery
+artillery-report.json

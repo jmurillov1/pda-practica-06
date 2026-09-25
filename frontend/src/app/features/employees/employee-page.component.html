@@ -1,0 +1,28 @@
+<div class="container py-4">
+  <h1 class="mb-4">Gestión de empleados</h1>
+
+  @if (error$ | async; as error) {
+    <div class="alert alert-danger" role="alert">{{ error }}</div>
+  }
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <h2 class="h5 card-title">{{ employeeToEdit ? 'Editar empleado' : 'Nuevo empleado' }}</h2>
+      <app-employee-form
+        [employee]="employeeToEdit"
+        (save)="onSave($event)"
+        (cancelled)="onCancel()"
+      ></app-employee-form>
+    </div>
+  </div>
+
+  @if (loading$ | async) {
+    <div class="text-center text-muted mb-3">Cargando...</div>
+  }
+
+  <app-employee-table
+    [employees]="(employees$ | async) ?? []"
+    (edit)="onEdit($event)"
+    (remove)="onRemove($event)"
+  ></app-employee-table>
+</div>
