@@ -1,0 +1,30 @@
+[
+  {
+    "timestamp": "2026-09-26T03:23:04.304Z",
+    "folder": "2026-09-26T03-23-04-304Z",
+    "verdict": "PASA",
+    "reasons": [],
+    "p99": 7.9,
+    "slaP99": 200,
+    "errorRateBruta": 0,
+    "rateReal": 0,
+    "requests": 8600,
+    "completed": 1075,
+    "target": "http://localhost:3000"
+  },
+  {
+    "timestamp": "2026-09-26T03:30:40.191Z",
+    "folder": "2026-09-26T03-30-40-191Z",
+    "verdict": "FALLA",
+    "reasons": [
+      "p99 (5826.9ms) ≥ umbral del ensure (200ms)"
+    ],
+    "p99": 5826.9,
+    "slaP99": 200,
+    "errorRateBruta": 0,
+    "rateReal": 0,
+    "requests": 8600,
+    "completed": 1075,
+    "target": "http://localhost:3000"
+  }
+]

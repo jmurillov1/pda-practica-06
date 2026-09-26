@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Reporte de pruebas (extra)</title>
+<style>
+  :root { --bg:#fff; --fg:#1a1a1a; --muted:#6b7280; --card:#f7f7f8; --border:#e5e7eb; --ok:#16a34a; --okbg:#f0fdf4; --warn:#dc2626; --warnbg:#fef2f2; --crit:#b91c1c; --info:#2563eb; --accent:#2563eb; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#15161a; --fg:#eaeaea; --muted:#9ca3af; --card:#1e2025; --border:#2c2e33; --okbg:#0f2417; --warnbg:#2b1414; --accent:#60a5fa; --info:#60a5fa; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:24px 16px 56px; background:var(--bg); color:var(--fg); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; line-height:1.5; }
+  main { max-width: 860px; margin: 0 auto; }
+  h1 { font-size: 1.35rem; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); font-size: 0.88rem; margin-bottom: 8px; }
+  .meta { color: var(--muted); font-size: 0.78rem; margin-bottom: 20px; }
+  .badge-extra { display:inline-block; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--muted); border:1px solid var(--border); border-radius:6px; padding:2px 8px; margin-bottom:12px; }
+  section { margin-bottom: 28px; }
+  h2 { font-size: 1.02rem; margin-bottom: 10px; }
+  h3 { font-size: 0.88rem; color: var(--muted); margin: 16px 0 8px; }
+  p.lead { color: var(--muted); font-size: 0.88rem; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .kpi .label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; }
+  .kpi .value { font-size: 1.4rem; font-weight: 600; margin-top: 3px; }
+  .kpi .value.ok { color: var(--ok); }
+  .kpi .value.warn { color: var(--warn); }
+  .kpi .explain { font-size: 0.76rem; color: var(--muted); margin-top: 6px; }
+  .checks { display: flex; flex-direction: column; gap: 8px; }
+  .check { border-radius: 10px; padding: 12px 14px; font-size: 0.86rem; border: 1px solid var(--border); }
+  .check.pass { color: var(--ok); border-color: var(--ok); background: var(--okbg); }
+  .check.fail { color: var(--warn); border-color: var(--warn); background: var(--warnbg); }
+  .check b { display:block; margin-bottom:2px; }
+  .check .desc { font-weight: 400; color: inherit; opacity: 0.85; font-size: 0.8rem; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  svg { width: 100%; height: auto; display: block; }
+  .legend { font-size: 0.78rem; color: var(--muted); margin-top: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.83rem; background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  th, td { text-align: right; padding: 7px 10px; border-bottom: 1px solid var(--border); }
+  th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+  th { color: var(--muted); font-weight: 500; }
+  tr:last-child td { border-bottom: none; }
+  .desc-cell { color: var(--muted); font-size: 0.78rem; text-align: left !important; }
+  .fase-cal { color: var(--accent); }
+  .fase-sat { color: var(--warn); }
+  .fase-dren { color: var(--muted); opacity: 0.75; }
+  .tipo-bueno { color: var(--ok); font-weight: 600; }
+  .tipo-malo { color: var(--warn); font-weight: 600; }
+  .estado-passed { color: var(--ok); }
+  .estado-failed { color: var(--warn); font-weight: 600; }
+  .summary-line { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; }
+  .summary-line b { color: var(--fg); }
+  .verdict { border-radius: 14px; padding: 20px; font-size: 1rem; margin-bottom: 24px; }
+  .verdict.pass { background: var(--okbg); border: 1px solid var(--ok); color: var(--ok); }
+  .verdict.fail { background: var(--warnbg); border: 1px solid var(--warn); color: var(--warn); }
+  .verdict h2 { color: inherit; margin: 0 0 6px; }
+  .verdict ul { margin: 8px 0 0; padding-left: 18px; font-size: 0.85rem; }
+  .finding { border-left: 4px solid var(--border); padding: 10px 14px; border-radius: 6px; background: var(--card); margin-bottom: 10px; }
+  .finding.info { border-left-color: var(--info); }
+  .finding.warning { border-left-color: var(--warn); }
+  .finding.critical { border-left-color: var(--crit); background: var(--warnbg); }
+  .finding .sev { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
+  .finding h4 { margin: 2px 0 4px; font-size: 0.92rem; }
+  .finding p { margin: 0; font-size: 0.85rem; color: var(--muted); }
+  .finding .metric { font-size: 0.72rem; color: var(--muted); margin-top: 6px; font-style: italic; }
+  .cov-bar-track { background: var(--border); border-radius: 6px; height: 8px; overflow: hidden; margin-top: 6px; }
+  .cov-bar-fill { height: 100%; background: var(--ok); }
+  .cov-bar-fill.low { background: var(--warn); }
+  .matrix-cell-ok { color: var(--ok); }
+  .matrix-cell-gap { color: var(--warn); font-weight: 600; }
+  details.raw { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; }
+  details.raw summary { cursor: pointer; font-size: 0.88rem; }
+  details.raw pre { max-height: 400px; overflow: auto; font-size: 0.72rem; }
+  dl.glossary { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; font-size: 0.85rem; }
+  dl.glossary dt { font-weight: 600; }
+  dl.glossary dd { margin: 0; color: var(--muted); }
+  footer { color: var(--muted); font-size: 0.75rem; margin-top: 24px; }
+  code { background: var(--card); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 0.85em; }
+</style>
+</head>
+<body>
+<main>
+  <span class="badge-extra">Extra — no reemplaza al informe</span>
+  <h1>Reporte de pruebas — unitarias (Jest) + estrés (Artillery)</h1>
+  <p class="subtitle">Explica y diagnostica los mismos datos que las consolas de <code>jest</code> y <code>artillery run</code>, en vez de solo listarlos.</p>
+  <p class="meta">Target: <code>http://localhost:3000</code> · Duración: 60s · </p>
+
+  
+  <div class="verdict pass">
+    <h2>✅ VEREDICTO: PASA</h2>
+    <p>
+      p99: <b>7.9ms</b> (umbral del <code>ensure</code>: 200ms) ·
+      maxErrorRate: <b>0.00%</b> (umbral: 1%)
+    </p>
+    <p>Mismos umbrales que el bloque <code>ensure</code> de stress-test.yml — este veredicto siempre coincide con los "Checks:" que imprime la consola de <code>artillery run</code>.</p>
+    <p style="font-size:0.8rem; opacity:0.85; margin-bottom:0;">Tasa de error <b>real</b> (4xx inesperados + 5xx + errores de socket, excluyendo los 4xx intencionales del catálogo): 0.00% — ver el detalle en "Hallazgos y recomendaciones".</p>
+  </div>
+  
+  <section>
+    <h2>Resumen ejecutivo</h2>
+    <p class="lead">Los datos crudos de esta corrida, sin interpretar todavía — la interpretación va en "Hallazgos y recomendaciones".</p>
+    <div class="kpis">
+      <div class="kpi"><div class="label">VUs creados / completados</div><div class="value">1075 / 1075</div></div>
+      <div class="kpi"><div class="label">Requests</div><div class="value">8600</div></div>
+      <div class="kpi"><div class="label">Duración</div><div class="value">60s</div></div>
+      <div class="kpi"><div class="label">Pico de tasa</div><div class="value">288/s</div></div>
+      <div class="kpi"><div class="label">p50 / p95 / p99</div><div class="value">1 / 5 / 7.9 ms</div></div>
+    </div>
+  </section>
+  
+  <section>
+    <h2>1. Análisis de Aislamiento (Evidencia Jest) — Mantenibilidad y Capacidad de prueba</h2>
+    <p class="lead">
+      Cada fila prueba el controlador (<code>employee.controller.ts</code>) con el repositorio mockeado
+      (<code>jest.fn()</code>), sin Mongo ni Docker de por medio. Los casos <span class="tipo-bueno">buenos</span>
+      verifican la respuesta HTTP cuando el repositorio responde con éxito; los <span class="tipo-malo">malos</span>
+      verifican que el controlador deja pasar el error (404 de negocio o excepción de infraestructura) para que lo
+      maneje <code>errorMiddleware</code>, en vez de tragárselo o responder con datos falsos.
+    </p>
+    <div class="summary-line">
+      <span>Total: <b>10</b></span>
+      <span>Pasaron: <b class="estado-passed">10</b></span>
+      <span>Fallaron: <b class="estado-passed">0</b></span>
+      <span>Resultado global: <b class="estado-passed">PASS</b></span>
+    </div>
+    <div class="check pass" style="margin-bottom:16px;">
+      <b>✔ pnpm test finaliza en verde</b>
+      <span class="desc">Equivalente al <code>npm run test</code> que pide la guía — 10/10 casos pasaron.</span>
+    </div>
+
+    <div class="card" style="border-left: 4px solid var(--info);">
+      <h3 style="margin-top:0;">Pregunta de control</h3>
+      <p style="font-style: italic; margin-bottom: 10px;">¿Por qué el uso del patrón de Inversión de Dependencias permite realizar la prueba unitaria del controlador sin necesidad de inicializar un contenedor Docker o instancia de MongoDB local?</p>
+      <p style="margin: 0; font-size: 0.88rem;">
+        El controlador (<code>employee.controller.ts</code>) no depende de Mongoose ni de una implementación concreta:
+        su fábrica <code>createEmployeeController(repo: EmployeeRepository)</code> recibe la <b>abstracción</b>
+        <code>EmployeeRepository</code>, no la clase <code>MongooseEmployeeRepository</code>. Quién decide la
+        implementación concreta es <code>container.ts</code>, en el borde de la aplicación (composition root), no el
+        controlador. Gracias a esa inversión de dependencias (DIP), el test unitario construye un objeto plano que
+        implementa el mismo contrato (con <code>jest.fn()</code>) y se lo pasa al controlador — que no distingue ese
+        doble de prueba de un repositorio real, porque solo conoce la interfaz. Por eso no hace falta levantar Mongo,
+        Docker ni ninguna infraestructura: el test corre en memoria, en milisegundos, y verifica solo la lógica del
+        controlador (armar la respuesta HTTP correcta), no el acceso a datos.
+      </p>
+    </div>
+
+    <table>
+      <thead><tr><th>Grupo</th><th>Caso</th><th>Tipo</th><th>Estado</th><th>Duración</th></tr></thead>
+      <tbody>
+        <tr><td>Casos base de la práctica</td><td>Debería retornar un estado 200 y la lista de empleados de la abstracción</td><td class="tipo-bueno">Bueno</td><td class="estado-passed">✔ Pasó</td><td>2ms</td></tr><tr><td>Casos base de la práctica</td><td>Debería retornar 201 y la cabecera Location al crear un empleado</td><td class="tipo-bueno">Bueno</td><td class="estado-passed">✔ Pasó</td><td>0ms</td></tr><tr><td>Casos base de la práctica</td><td>Debería propagar un AppError 404 cuando el empleado no existe (sin tocar la BD real)</td><td class="tipo-malo">Malo</td><td class="estado-passed">✔ Pasó</td><td>1ms</td></tr><tr><td>Casos adicionales: happy path</td><td>getById: debería retornar 200 con el empleado cuando sí existe</td><td class="tipo-bueno">Bueno</td><td class="estado-passed">✔ Pasó</td><td>0ms</td></tr><tr><td>Casos adicionales: happy path</td><td>update: debería retornar 200 con el empleado actualizado</td><td class="tipo-bueno">Bueno</td><td class="estado-passed">✔ Pasó</td><td>0ms</td></tr><tr><td>Casos adicionales: happy path</td><td>remove: debería retornar 204 sin cuerpo cuando el empleado se elimina</td><td class="tipo-bueno">Bueno</td><td class="estado-passed">✔ Pasó</td><td>1ms</td></tr><tr><td>Casos adicionales: errores esperados</td><td>update: debería propagar un AppError 404 si el empleado no existe</td><td class="tipo-malo">Malo</td><td class="estado-passed">✔ Pasó</td><td>0ms</td></tr><tr><td>Casos adicionales: errores esperados</td><td>remove: debería propagar un AppError 404 si el empleado no existe</td><td class="tipo-malo">Malo</td><td class="estado-passed">✔ Pasó</td><td>1ms</td></tr><tr><td>Casos adicionales: errores esperados</td><td>list: debería propagar el error del repositorio sin atraparlo (lo maneja el errorMiddleware)</td><td class="tipo-malo">Malo</td><td class="estado-passed">✔ Pasó</td><td>3ms</td></tr><tr><td>Casos adicionales: errores esperados</td><td>create: debería propagar el error del repositorio sin atraparlo (lo maneja el errorMiddleware)</td><td class="tipo-malo">Malo</td><td class="estado-passed">✔ Pasó</td><td>0ms</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Matriz de cobertura funcional (operación × tipo de caso)</h3>
+    <table>
+      <thead><tr><th>Operación</th><th>Bueno</th><th>Malo</th></tr></thead>
+      <tbody><tr><td>list</td><td><span class="matrix-cell-ok">1</span></td><td><span class="matrix-cell-ok">1</span></td></tr><tr><td>getById</td><td><span class="matrix-cell-ok">1</span></td><td><span class="matrix-cell-ok">1</span></td></tr><tr><td>create</td><td><span class="matrix-cell-ok">1</span></td><td><span class="matrix-cell-ok">1</span></td></tr><tr><td>update</td><td><span class="matrix-cell-ok">1</span></td><td><span class="matrix-cell-ok">1</span></td></tr><tr><td>remove</td><td><span class="matrix-cell-ok">1</span></td><td><span class="matrix-cell-ok">1</span></td></tr></tbody>
+    </table>
+
+    <h3>Cobertura de código (umbral visual: 80%)</h3>
+    <div class="card">
+        <div>
+          <div class="summary-line" style="margin-bottom:2px;"><span>lines</span><span>100%</span></div>
+          <div class="cov-bar-track"><div class="cov-bar-fill" style="width:100%"></div></div>
+        </div>
+        <div>
+          <div class="summary-line" style="margin-bottom:2px;"><span>statements</span><span>100%</span></div>
+          <div class="cov-bar-track"><div class="cov-bar-fill" style="width:100%"></div></div>
+        </div>
+        <div>
+          <div class="summary-line" style="margin-bottom:2px;"><span>functions</span><span>100%</span></div>
+          <div class="cov-bar-track"><div class="cov-bar-fill" style="width:100%"></div></div>
+        </div>
+        <div>
+          <div class="summary-line" style="margin-bottom:2px;"><span>branches</span><span>100%</span></div>
+          <div class="cov-bar-track"><div class="cov-bar-fill" style="width:100%"></div></div>
+        </div></div>
+  </section>
+  
+  <section>
+    <h2>2. Análisis del Percentil 99 (p99) y Rendimiento Colectivo (Evidencia Artillery)</h2>
+    <p class="lead">
+      Cada usuario virtual (VU) ejecuta 8 pasos seguidos contra <code>/api/v1/empleados</code>: 4 casos
+      <span class="tipo-bueno">buenos</span> (deben aceptarse) y 4 casos <span class="tipo-malo">malos</span>
+      (deben rechazarse con <code>400</code>), en ese orden.
+    </p>
+    <h3>Catálogo de casos por VU</h3>
+    
+    <table>
+      <thead><tr><th>#</th><th>Tipo</th><th>Método</th><th>Endpoint</th><th>Código esperado</th><th>Qué valida</th></tr></thead>
+      <tbody>
+        <tr><td>B1</td><td class="tipo-bueno">Bueno</td><td>POST</td><td>/api/v1/empleados</td><td>201</td><td class="desc-cell">Alta de empleado con los 4 campos válidos (nombre, cargo, departamento, sueldo positivo). Captura el id para reusarlo en los siguientes pasos.</td></tr><tr><td>B2</td><td class="tipo-bueno">Bueno</td><td>GET</td><td>/api/v1/empleados</td><td>200</td><td class="desc-cell">Lista completa de empleados: confirma que el que se acaba de crear es visible.</td></tr><tr><td>B3</td><td class="tipo-bueno">Bueno</td><td>GET</td><td>/api/v1/empleados/{id}</td><td>200</td><td class="desc-cell">Consulta por el id capturado en B1: lectura individual de un recurso que sí existe.</td></tr><tr><td>B4</td><td class="tipo-bueno">Bueno</td><td>PUT</td><td>/api/v1/empleados/{id}</td><td>200</td><td class="desc-cell">Actualización parcial válida (solo cambia el sueldo) sobre el mismo id.</td></tr><tr><td>M1</td><td class="tipo-malo">Malo</td><td>POST</td><td>/api/v1/empleados</td><td>400</td><td class="desc-cell">Sueldo negativo y nombre de 2 caracteres: Zod debe rechazarlo antes de tocar Mongo.</td></tr><tr><td>M2</td><td class="tipo-malo">Malo</td><td>GET</td><td>/api/v1/empleados/no-es-un-id</td><td>400</td><td class="desc-cell">Id que no tiene forma de ObjectId (24 hex): lo rechaza idParamSchema.</td></tr><tr><td>M3</td><td class="tipo-malo">Malo</td><td>POST</td><td>/api/v1/empleados</td><td>400</td><td class="desc-cell">Falta el campo obligatorio "departamento": createEmployeeSchema exige los 4 campos.</td></tr><tr><td>M4</td><td class="tipo-malo">Malo</td><td>PUT</td><td>/api/v1/empleados/{id}</td><td>400</td><td class="desc-cell">Body vacío ({}) en un update: updateEmployeeSchema exige al menos un campo para actualizar.</td></tr>
+      </tbody>
+    </table>
+    <p class="lead" style="font-size:0.78rem;">
+      Artillery agrupa sus contadores por endpoint, no por caso individual: por cada VU completado se esperan
+      1×<code>201</code> (B1), 3×<code>200</code> (B2+B3+B4) y 4×<code>400</code> (M1–M4).
+    </p>
+
+    <h3>Fases de carga configuradas</h3>
+    <p class="lead" style="margin-top:-4px;">
+      Primero un tráfico bajo y constante (<span class="fase-cal">Calentamiento</span>) y luego una rampa creciente
+      (<span class="fase-sat">Saturación</span>) para forzar el límite. Los intervalos posteriores al fin de las fases
+      configuradas (<span class="fase-dren">Drenaje</span>) son conexiones residuales, no carga generada activamente,
+      y se excluyen del análisis de tendencia del p99.
+    </p>
+    <table>
+        <thead><tr><th>Fase</th><th>Duración</th><th>Tasa de llegada</th></tr></thead>
+        <tbody>
+          <tr><td>1. 🧪 Fase de Calentamiento (Tráfico Base)</td><td>20s</td><td>5 VU/s</td></tr><tr><td>2. 🧪 Fase de Saturación Máxima (Pico de Carga)</td><td>30s</td><td>15 → 50 VU/s</td></tr>
+        </tbody>
+      </table>
+
+    <h3>Números clave</h3>
+    <div class="kpis">
+      <div class="kpi"><div class="label">201 / 200 / 400</div><div class="value">1075 / 3225 / 4300</div></div>
+      <div class="kpi"><div class="label">Requests / Responses</div><div class="value">8600 / 8600</div></div>
+      <div class="kpi"><div class="label">Tasa promedio</div><div class="value">179/s</div><div class="explain">74.5 MB descargados en total.</div></div>
+    </div>
+
+    <h3>Distribución completa de latencia</h3>
+    <table>
+      <thead><tr><th>Percentil</th><th>Latencia</th><th>Significado</th></tr></thead>
+      <tbody>
+        <tr><td>min</td><td>0 ms</td><td class="desc-cell">La petición más rápida registrada.</td></tr>
+        <tr><td>p50 (mediana)</td><td>1 ms</td><td class="desc-cell">La mitad de las peticiones respondió más rápido que esto.</td></tr>
+        <tr><td>p75</td><td>2 ms</td><td class="desc-cell">3 de cada 4 peticiones respondieron más rápido que esto.</td></tr>
+        <tr><td>p90</td><td>4 ms</td><td class="desc-cell">9 de cada 10 peticiones respondieron más rápido que esto.</td></tr>
+        <tr><td>p95</td><td>5 ms</td><td class="desc-cell">Solo el 5% de las peticiones fue más lento que esto.</td></tr>
+        <tr><td>p99</td><td>7.9 ms</td><td class="desc-cell">Solo el 1% de las peticiones fue más lento.</td></tr>
+        <tr><td>p99.9</td><td>32.1 ms</td><td class="desc-cell">La cola más extrema: 1 de cada 1000 peticiones.</td></tr>
+        <tr><td>max</td><td>45 ms</td><td class="desc-cell">La petición más lenta de toda la prueba.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Latencia p99 y tasa de llegada en el tiempo</h3>
+    <div class="card">
+      <svg viewBox="0 0 720 200" role="img" aria-label="p99 por intervalo">
+        <line x1="44" y1="10" x2="704" y2="10" stroke="var(--warn)" stroke-dasharray="4 4" stroke-width="1" />
+        <text x="704" y="6" text-anchor="end" font-size="10" fill="var(--warn)">SLA 200ms</text>
+        <line x1="44" y1="10" x2="44" y2="174" stroke="var(--border)" />
+        <line x1="44" y1="174" x2="704" y2="174" stroke="var(--border)" />
+        <polyline points="44,155.96 154,171.54 264,170.72 374,170.72 484,169.08 594,164.078 704,173.18" fill="none" stroke="var(--accent)" stroke-width="2" />
+        <circle cx="44" cy="155.96" r="3" fill="var(--accent)"><title>Intervalo 1: p99=22ms</title></circle><circle cx="154" cy="171.54" r="3" fill="var(--accent)"><title>Intervalo 2: p99=3ms</title></circle><circle cx="264" cy="170.72" r="3" fill="var(--accent)"><title>Intervalo 3: p99=4ms</title></circle><circle cx="374" cy="170.72" r="3" fill="var(--accent)"><title>Intervalo 4: p99=4ms</title></circle><circle cx="484" cy="169.08" r="3" fill="var(--accent)"><title>Intervalo 5: p99=6ms</title></circle><circle cx="594" cy="164.078" r="3" fill="var(--accent)"><title>Intervalo 6: p99=12.1ms</title></circle><circle cx="704" cy="173.18" r="3" fill="var(--accent)"><title>Intervalo 7: p99=1ms</title></circle>
+      </svg>
+      <div class="legend">Línea azul: p99 por intervalo. Línea roja punteada: umbral del SLA (200ms).</div>
+    </div>
+    <div class="card" style="margin-top:12px;">
+      <svg viewBox="0 0 720 200" role="img" aria-label="tasa de llegada por intervalo">
+        <line x1="44" y1="10" x2="44" y2="174" stroke="var(--border)" />
+        <line x1="44" y1="174" x2="704" y2="174" stroke="var(--border)" />
+        <polyline points="44,159.76388888888889 154,154.06944444444446 264,110.79166666666666 374,49.861111111111114 484,31.638888888888886 594,10 704,132.43055555555554" fill="none" stroke="var(--ok)" stroke-width="2" />
+        <circle cx="44" cy="159.76388888888889" r="3" fill="var(--ok)"><title>Intervalo 1: 25 req/s</title></circle><circle cx="154" cy="154.06944444444446" r="3" fill="var(--ok)"><title>Intervalo 2: 35 req/s</title></circle><circle cx="264" cy="110.79166666666666" r="3" fill="var(--ok)"><title>Intervalo 3: 111 req/s</title></circle><circle cx="374" cy="49.861111111111114" r="3" fill="var(--ok)"><title>Intervalo 4: 218 req/s</title></circle><circle cx="484" cy="31.638888888888886" r="3" fill="var(--ok)"><title>Intervalo 5: 250 req/s</title></circle><circle cx="594" cy="10" r="3" fill="var(--ok)"><title>Intervalo 6: 288 req/s</title></circle><circle cx="704" cy="132.43055555555554" r="3" fill="var(--ok)"><title>Intervalo 7: 73 req/s</title></circle>
+      </svg>
+      <div class="legend">Tasa de llegada (req/s) por intervalo — el pico marca el punto más exigente de la fase de saturación.</div>
+    </div>
+    <div class="card" style="margin-top:12px;">
+      <svg viewBox="0 0 720 200" role="img" aria-label="2xx vs 4xx por intervalo">
+        <line x1="44" y1="10" x2="44" y2="174" stroke="var(--border)" />
+        <line x1="44" y1="174" x2="704" y2="174" stroke="var(--border)" />
+        
+        <rect x="3.714285714285708" y="165.10950487893024" width="39.28571428571429" height="8.890495121069751" fill="var(--ok)" opacity="0.85"><title>Intervalo 1: 150 × 2xx</title></rect>
+        <rect x="45" y="169.85110227683413" width="39.28571428571429" height="4.1488977231658835" fill="var(--warn)" opacity="0.85"><title>Intervalo 1: 70 × 4xx</title></rect>
+        <rect x="113.71428571428571" y="163.80556559450667" width="39.28571428571429" height="10.194434405493315" fill="var(--ok)" opacity="0.85"><title>Intervalo 2: 172 × 2xx</title></rect>
+        <rect x="155" y="163.8648355619805" width="39.28571428571429" height="10.135164438019515" fill="var(--warn)" opacity="0.85"><title>Intervalo 2: 171 × 4xx</title></rect>
+        <rect x="223.71428571428572" y="144.8391760028912" width="39.28571428571429" height="29.160823997108782" fill="var(--ok)" opacity="0.85"><title>Intervalo 3: 492 × 2xx</title></rect>
+        <rect x="265" y="158.35272858691724" width="39.28571428571429" height="15.64727141308276" fill="var(--warn)" opacity="0.85"><title>Intervalo 3: 264 × 4xx</title></rect>
+        <rect x="333.7142857142857" y="107.61763642934586" width="39.28571428571429" height="66.38236357065414" fill="var(--ok)" opacity="0.85"><title>Intervalo 4: 1120 × 2xx</title></rect>
+        <rect x="375" y="119.11601011926274" width="39.28571428571429" height="54.88398988073727" fill="var(--warn)" opacity="0.85"><title>Intervalo 4: 926 × 4xx</title></rect>
+        <rect x="443.7142857142857" y="98.31225153595952" width="39.28571428571429" height="75.68774846404048" fill="var(--ok)" opacity="0.85"><title>Intervalo 5: 1277 × 2xx</title></rect>
+        <rect x="485" y="108.03252620166245" width="39.28571428571429" height="65.96747379833755" fill="var(--warn)" opacity="0.85"><title>Intervalo 5: 1113 × 4xx</title></rect>
+        <rect x="553.7142857142857" y="109.45500542103362" width="39.28571428571429" height="64.54499457896638" fill="var(--ok)" opacity="0.85"><title>Intervalo 6: 1089 × 2xx</title></rect>
+        <rect x="595" y="74.48572461149259" width="39.28571428571429" height="99.51427538850741" fill="var(--warn)" opacity="0.85"><title>Intervalo 6: 1679 × 4xx</title></rect>
+        <rect x="663.7142857142857" y="174" width="39.28571428571429" height="0" fill="var(--ok)" opacity="0.85"><title>Intervalo 7: 0 × 2xx</title></rect>
+        <rect x="705" y="169.43621250451753" width="39.28571428571429" height="4.5637874954824715" fill="var(--warn)" opacity="0.85"><title>Intervalo 7: 77 × 4xx</title></rect>
+      </svg>
+      <div class="legend"><span style="color:var(--ok)">■</span> 2xx &nbsp; <span style="color:var(--warn)">■</span> 4xx, por intervalo.</div>
+    </div>
+
+    <h3>Evolución por intervalo</h3>
+    <table>
+      <thead><tr><th>#</th><th>Fase</th><th>Requests</th><th>Tasa</th><th>201</th><th>400</th><th>Fallidos</th><th>media (ms)</th><th>p99 (ms)</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td class="fase-cal">Calentamiento</td><td>220</td><td>25/s</td><td>45</td><td>70</td><td>0</td><td>2</td><td>22</td></tr><tr><td>2</td><td class="fase-cal">Calentamiento</td><td>344</td><td>35/s</td><td>43</td><td>171</td><td>0</td><td>1.1</td><td>3</td></tr><tr><td>3</td><td class="fase-cal">Calentamiento</td><td>755</td><td>111/s</td><td>149</td><td>264</td><td>0</td><td>1.4</td><td>4</td></tr><tr><td>4</td><td class="fase-sat">Saturación</td><td>2048</td><td>218/s</td><td>297</td><td>926</td><td>0</td><td>1.4</td><td>4</td></tr><tr><td>5</td><td class="fase-sat">Saturación</td><td>2389</td><td>250/s</td><td>336</td><td>1113</td><td>0</td><td>1.8</td><td>6</td></tr><tr><td>6</td><td class="fase-sat">Saturación</td><td>2767</td><td>288/s</td><td>205</td><td>1679</td><td>0</td><td>1.8</td><td>12.1</td></tr><tr><td>7</td><td class="fase-dren">Drenaje</td><td>77</td><td>73/s</td><td>0</td><td>77</td><td>0</td><td>0.4</td><td>1</td></tr>
+      </tbody>
+    </table>
+  </section>
+  
+  <section>
+    <h2>Hallazgos y recomendaciones</h2>
+    
+      <div class="finding warning">
+        <div class="sev">Advertencia</div>
+        <h4>El p99 crece de forma exponencial durante la fase de saturación</h4>
+        <p>Serie de p99 por intervalo: #4=4ms, #5=6ms, #6=12.1ms (se excluyeron 1 intervalo(s) de "Drenaje": tráfico posterior al fin de las fases configuradas, no forma parte de la Saturación) (ajuste exponencial, R²=0.98). Un crecimiento exponencial indica que algún recurso alcanzó su límite duro y las peticiones se están encolando sin drenarse al mismo ritmo en que llegan. Cuellos de botella síncronos candidatos en el Event Loop: 1) morgan("dev") en app.ts escribe en stdout en cada request (solo se desactiva con NODE_ENV=test). 2) JSON.parse/JSON.stringify del body parser y de las respuestas: operaciones síncronas que escalan con el tamaño del payload. 3) schema.safeParse(...) de Zod en validation.middleware.ts: validación síncrona de CPU en cada request. 4) El pool de conexiones de Mongoose tiene un tamaño finito; si el tráfico lo supera, las operaciones se encolan. 5) helmet() añade cabeceras en cada respuesta; costo marginal pero también síncrono.</p>
+        <div class="metric">Métrica: periods[].p99 (fase Saturación) — regresión exponencial</div>
+      </div>
+      <div class="finding warning">
+        <div class="sev">Advertencia</div>
+        <h4>Outlier de latencia detectado</h4>
+        <p>En el intervalo #1 (period 1790392920000, fase Calentamiento), el endpoint "/api/v1/empleados/no-es-un-id" tuvo una petición de 15ms mientras el p99 de ese mismo intervalo era 1ms (más de 10×). Probablemente un evento puntual (GC, I/O bloqueante) y no una tendencia — revisa "Evolución por intervalo" para confirmar que no se repite.</p>
+        <div class="metric">Métrica: byEndpointResponseTime["/api/v1/empleados/no-es-un-id"].max / p99 (intervalo #1)</div>
+      </div>
+      <div class="finding warning">
+        <div class="sev">Advertencia</div>
+        <h4>El payload descargado crece en cada intervalo sin techo</h4>
+        <p>Los bytes descargados por intervalo suben de forma sostenida (total de la corrida: 74.5 MB). El listado (GET /api/v1/empleados) no tiene paginación: cada POST nuevo agranda la respuesta del siguiente GET. Recomendación: agregar paginación (limit/offset o cursor) o al menos un límite máximo de resultados.</p>
+        <div class="metric">Métrica: http.downloaded_bytes por intervalo</div>
+      </div>
+      <div class="finding info">
+        <div class="sev">Info</div>
+        <h4>El contador de rechazos de Zod coincide exactamente con el tráfico corrupto inyectado</h4>
+        <p>4300 respuestas 400 = 1075 VUs completados × 4 casos corruptos por VU (M1–M4). Y 1075 × 201 + 3225 × 200 = 1075 × 1 + 1075 × 3, exactamente lo que produce cada VU en sus 4 pasos "buenos".</p>
+        <div class="metric">Métrica: http.codes.201 / http.codes.200 / http.codes.400</div>
+      </div>
+      <div class="finding info">
+        <div class="sev">Info</div>
+        <h4>Los 4xx esperados no cuentan como fallos reales</h4>
+        <p>4300 respuestas 4xx vienen de payloads inválidos a propósito (validación Zod / id malformado): 2150× 400 en "/api/v1/empleados" (Zod rechaza payload corrupto o incompleto (casos M1/M3 del catálogo de stress-test.yml).); 1075× 400 en "/api/v1/empleados/{{ employeeId }}" (updateEmployeeSchema rechaza el body vacío del caso M4 (Artillery agrupa esta URL junto con el GET B3, que espera 200).); 1075× 400 en "/api/v1/empleados/no-es-un-id" (idParamSchema rechaza un id sin forma de ObjectId (caso M2).). Tasa de error bruta: 0.00%. Tasa de error real (4xx inesperados): 0.00%.</p>
+        <div class="metric">Métrica: http.codes.4xx por endpoint</div>
+      </div>
+      <div class="finding info">
+        <div class="sev">Info</div>
+        <h4>Las peticiones rechazadas (4xx) responden más rápido que las exitosas (2xx)</h4>
+        <p>Media 2xx: 2.4ms vs. media 4xx: 0.9ms. Es el comportamiento esperado: la validación de Zod rechaza la petición en el middleware, antes de llegar a la capa de datos (Mongoose), así que el camino de error es estructuralmente más corto.</p>
+        <div class="metric">Métrica: http.response_time.2xx.mean / http.response_time.4xx.mean</div>
+      </div>
+      <div class="finding info">
+        <div class="sev">Info</div>
+        <h4>requests y responses no cuadran en algunos intervalos</h4>
+        <p>intervalo #2 (period 1790392930000): 344 requests vs 343 responses; intervalo #3 (period 1790392940000): 755 requests vs 756 responses; intervalo #4 (period 1790392950000): 2048 requests vs 2046 responses; intervalo #5 (period 1790392960000): 2389 requests vs 2390 responses; intervalo #6 (period 1790392970000): 2767 requests vs 2768 responses. Se compensa entre ventanas: al final de la corrida el total agregado sí cuadra (una respuesta cruzó el corte de la ventana de ~10s en la que se contó su request).</p>
+        <div class="metric">Métrica: http.requests vs http.responses por intervalo</div>
+      </div>
+      <div class="finding info">
+        <div class="sev">Info</div>
+        <h4>La duración de sesión no es latencia de servidor</h4>
+        <p>vusers.session_length mide cuánto tarda un VU en completar TODO su flujo, incluyendo los `think` entre pasos del escenario. Con 8 pasos y `think: 1` entre la mayoría, la mayor parte de esos ~7s por VU es tiempo de espera simulado, no tiempo de respuesta real del servidor (eso ya lo mide http.response_time).</p>
+        <div class="metric">Métrica: vusers.session_length</div>
+      </div>
+  </section>
+  
+  <section>
+    <h2>Glosario</h2>
+    <dl class="glossary">
+      <dt>VU</dt><dd>Usuario virtual: una sesión simulada que ejecuta el escenario completo de principio a fin.</dd>
+      <dt>p50 / p95 / p99</dt><dd>Percentiles de latencia: "p99 = 26ms" significa que el 99% de las peticiones respondió en 26ms o menos.</dd>
+      <dt>request rate</dt><dd>Peticiones HTTP por segundo que Artillery disparó en ese momento.</dd>
+      <dt>2xx / 4xx</dt><dd>Familias de código HTTP: 2xx = éxito, 4xx = error del cliente (aquí, casi todos intencionales por diseño del escenario).</dd>
+    </dl>
+  </section>
+  
+  <section>
+    <h2>Datos crudos</h2>
+    <details class="raw"><summary>JSON agregado de Artillery</summary><pre>{
+  "period": 1790392980000,
+  "counters": {
+    "vusers.created_by_name.Inundación transaccional perimetral (Payloads Mixtos Zod)": 1075,
+    "vusers.created": 1075,
+    "http.requests": 8600,
+    "http.codes.201": 1075,
+    "http.responses": 8600,
+    "http.downloaded_bytes": 78089525,
+    "plugins.metrics-by-endpoint./api/v1/empleados.codes.201": 1075,
+    "http.codes.200": 3225,
+    "plugins.metrics-by-endpoint./api/v1/empleados.codes.200": 1075,
+    "plugins.metrics-by-endpoint./api/v1/empleados/{{ employeeId }}.codes.200": 2150,
+    "http.codes.400": 4300,
+    "plugins.metrics-by-endpoint./api/v1/empleados.codes.400": 2150,
+    "plugins.metrics-by-endpoint./api/v1/empleados/no-es-un-id.codes.400": 1075,
+    "plugins.metrics-by-endpoint./api/v1/empleados/{{ employeeId }}.codes.400": 1075,
+    "vusers.failed": 0,
+    "vusers.completed": 1075
+  },
+  "rates": {
+    "http.request_rate": 179
+  },
+  "firstCounterAt": 1790392921280,
+  "firstHistogramAt": 1790392921310,
+  "lastCounterAt": 1790392981573,
+  "lastHistogramAt": 1790392981573,
+  "firstMetricAt": 1790392921280,
+  "lastMetricAt": 1790392981573,
+  "summaries": {
+    "http.response_time": {
+      "min": 0,
+      "max": 45,
+      "count": 8600,
+      "mean": 1.6,
+      "p50": 1,
+      "median": 1,
+      "p75": 2,
+      "p90": 4,
+      "p95": 5,
+      "p99": 7.9,
+      "p999": 32.1
+    },
+    "http.response_time.2xx": {
+      "min": 0,
+      "max": 45,
+      "count": 4300,
+      "mean": 2.4,
+      "p50": 2,
+      "median": 2,
+      "p75": 3,
+      "p90": 5,
+      "p95": 6,
+      "p99": 8.9,
+      "p999": 36.2
+    },
+    "plugins.metrics-by-endpoint.response_time./api/v1/empleados": {
+      "min": 0,
+      "max": 45,
+      "count": 4300,
+      "mean": 1.9,
+      "p50": 1,
+      "median": 1,
+      "p75": 2,
+      "p90": 5,
+      "p95": 5,
+      "p99": 8.9,
+      "p999": 32.1
+    },
+    "plugins.metrics-by-endpoint.response_time./api/v1/empleados/{{ employeeId }}": {
+      "min": 0,
+      "max": 40,
+      "count": 3225,
+      "mean": 1.5,
+      "p50": 1,
+      "median": 1,
+      "p75": 2,
+      "p90": 3,
+      "p95": 4,
+      "p99": 7,
+      "p999": 32.1
+    },
+    "http.response_time.4xx": {
+      "min": 0,
+      "max": 38,
+      "count": 4300,
+      "mean": 0.9,
+      "p50": 1,
+      "median": 1,
+      "p75": 1,
+      "p90": 1,
+      "p95": 2,
+      "p99": 5,
+      "p999": 30.3
+    },
+    "plugins.metrics-by-endpoint.response_time./api/v1/empleados/no-es-un-id": {
+      "min": 0,
+      "max": 37,
+      "count": 1075,
+      "mean": 0.9,
+      "p50": 1,
+      "median": 1,
+      "p75": 1,
+      "p90": 2,
+      "p95": 2,
+      "p99": 5,
+      "p999": 25.8
+    },
+    "vusers.session_length": {
+      "min": 7010.1,
+      "max": 7061.7,
+      "count": 1075,
+      "mean": 7019.9,
+      "p50": 6976.1,
+      "median": 6976.1,
+      "p75": 6976.1,
+      "p90": 6976.1,
+      "p95": 6976.1,
+      "p99": 7117,
+      "p999": 7117
+    }
+  },
+  "histograms": {
+    "http.response_time": {
+      "min": 0,
+      "max": 45,
+      "count": 8600,
+      "mean": 1.6,
+      "p50": 1,
+      "median": 1,
+      "p75": 2,
+      "p90": 4,
+      "p95": 5,
+      "p99": 7.9,
+      "p999": 32.1
+    },
+    "http.response_time.2xx": {
+      "min": 0,
+      "max": 45,
+      "count": 4300,
+      "mean": 2.4,
+      "p50": 2,
+      "median": 2,
+      "p75": 3,
+      "p90": 5,
+      "p95": 6,
+      "p99": 8.9,
+      "p999": 36.2
+    },
+    "plugins.metrics-by-endpoint.response_time./api/v1/empleados": {
+      "min": 0,
+      "max": 45,
+      "count": 4300,
+      "mean": 1.9,
+      "p50": 1,
+      "median": 1,
+      "p75": 2,
+      "p90": 5,
+      "p95": 5,
+      "p99": 8.9,
+      "p999": 32.1
+    },
+    "plugins.metrics-by-endpoint.response_time./api/v1/empleados/{{ employeeId }}": {
+      "min": 0,
+      "max": 40,
+      "count": 3225,
+      "mean": 1.5,
+      "p50": 1,
+      "median": 1,
+      "p75": 2,
+      "p90": 3,
+      "p95": 4,
+      "p99": 7,
+      "p999": 32.1
+    },
+    "http.response_time.4xx": {
+      "min": 0,
+      "max": 38,
+      "count": 4300,
+      "mean": 0.9,
+      "p50": 1,
+      "median": 1,
+      "p75": 1,
+      "p90": 1,
+      "p95": 2,
+      "p99": 5,
+      "p999": 30.3
+    },
+    "plugins.metrics-by-endpoint.response_time./api/v1/empleados/no-es-un-id": {
+      "min": 0,
+      "max": 37,
+      "count": 1075,
+      "mean": 0.9,
+      "p50": 1,
+      "median": 1,
+      "p75": 1,
+      "p90": 2,
+      "p95": 2,
+      "p99": 5,
+      "p999": 25.8
+    },
+    "vusers.session_length": {
+      "min": 7010.1,
+      "max": 7061.7,
+      "count": 1075,
+      "mean": 7019.9,
+      "p50": 6976.1,
+      "median": 6976.1,
+      "p75": 6976.1,
+      "p90": 6976.1,
+      "p95": 6976.1,
+      "p99": 7117,
+      "p999": 7117
+    }
+  }
+}</pre></details>
+    <details class="raw" style="margin-top:8px;"><summary>JSON de Jest (totales)</summary><pre>{
+  "numTotalTests": 10,
+  "numPassedTests": 10,
+  "numFailedTests": 0,
+  "success": true
+}</pre></details>
+  </section>
+
+  <footer>Generado localmente con <code>scripts/generate-stress-report.mjs</code> (módulos en <code>scripts/report/</code>). No usa Artillery Cloud ni ningún servicio externo.</footer>
+</main>
+</body>
+</html>

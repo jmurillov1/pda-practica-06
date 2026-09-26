@@ -36,5 +36,7 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# Artillery
-artillery-report.json
+# Reportes crudos generados (ver docs/historial/ para la versión legible;
+# anclados a backend/ para no ignorar las copias versionadas del historial)
+/backend/artillery-report.json
+/backend/jest-results.json

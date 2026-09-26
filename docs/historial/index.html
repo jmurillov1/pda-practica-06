@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Historial de corridas de stress-test</title>
+<style>
+  :root { --bg:#fff; --fg:#1a1a1a; --muted:#6b7280; --card:#f7f7f8; --border:#e5e7eb; --ok:#16a34a; --warn:#dc2626; --accent:#2563eb; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#15161a; --fg:#eaeaea; --muted:#9ca3af; --card:#1e2025; --border:#2c2e33; --accent:#60a5fa; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:24px 16px 56px; background:var(--bg); color:var(--fg); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; line-height:1.5; }
+  main { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 1.3rem; margin-bottom: 6px; }
+  p.lead { color: var(--muted); font-size: 0.88rem; margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.83rem; background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; }
+  tr:last-child td { border-bottom: none; }
+  .ok { color: var(--ok); font-weight: 600; }
+  .warn { color: var(--warn); font-weight: 600; }
+  .muted { color: var(--muted); }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Historial de corridas de stress-test</h1>
+  <p class="lead">Cada fila es una corrida de <code>pnpm stress:report</code>, guardada automáticamente por fecha y hora. El reporte y el JSON crudo de cada corrida quedan en su propia carpeta.</p>
+  <table>
+    <thead><tr><th>Fecha</th><th>Veredicto</th><th>p99</th><th>Error bruto</th><th>Error real</th><th>Completados/Requests</th><th></th></tr></thead>
+    <tbody><tr>
+        <td>2026-09-26T03:30:40.191Z</td>
+        <td class="warn">❌ FALLA</td>
+        <td>5826.9ms <span class="muted">(sla 200ms)</span></td>
+        <td>0.00%</td>
+        <td>0.00%</td>
+        <td>1075/8600</td>
+        <td><a href="./2026-09-26T03-30-40-191Z/reporte.html">ver reporte</a></td>
+      </tr><tr>
+        <td>2026-09-26T03:23:04.304Z</td>
+        <td class="ok">✅ PASA</td>
+        <td>7.9ms <span class="muted">(sla 200ms)</span></td>
+        <td>0.00%</td>
+        <td>0.00%</td>
+        <td>1075/8600</td>
+        <td><a href="./2026-09-26T03-23-04-304Z/reporte.html">ver reporte</a></td>
+      </tr></tbody>
+  </table>
+</main>
+</body>
+</html>
