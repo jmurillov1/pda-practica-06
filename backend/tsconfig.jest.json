@@ -8,6 +8,5 @@
     "declarationMap": false,
     "types": ["node", "jest"]
   },
-  "include": ["src", "tests", "vitest.config.ts"],
-  "exclude": []
+  "include": ["src/**/*.spec.ts", "src"]
 }

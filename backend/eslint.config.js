@@ -8,6 +8,14 @@ export default tseslint.config(
   },
   js.configs.recommended,
   {
+    // Scripts sueltos de Node (fuera del build de TypeScript): necesitan los
+    // globales de Node (process, console) que no aplican al resto del proyecto.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: { process: 'readonly', console: 'readonly' },
+    },
+  },
+  {
     files: ['**/*.ts'],
     extends: [...tseslint.configs.recommendedTypeChecked],
     languageOptions: {
@@ -45,13 +53,25 @@ export default tseslint.config(
     },
   },
   {
-    // supertest tipa `response.body` como `any`; relajamos las reglas de seguridad de tipos
-    // solo en los tests, donde ese acceso es intencional y controlado.
+    // supertest tipa `response.body` como `any` (y los módulos .mjs sin tipos
+    // de scripts/report/ se importan igual, ver report-analyze.test.ts);
+    // relajamos las reglas de seguridad de tipos solo en los tests, donde ese
+    // acceso es intencional y controlado.
     files: ['tests/**/*.ts'],
     rules: {
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+    },
+  },
+  {
+    // Specs unitarios de Jest (src/**/*.spec.ts): los mocks (jest.fn()) que se
+    // desestructuran como `expect(mockRepository.findAll).toHaveBeenCalled...`
+    // disparan `unbound-method`, un falso positivo habitual con jest.Mocked<T>.
+    files: ['src/**/*.spec.ts'],
+    rules: {
+      '@typescript-eslint/unbound-method': 'off',
     },
   },
   {
