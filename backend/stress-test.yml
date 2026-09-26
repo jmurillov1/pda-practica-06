@@ -1,0 +1,74 @@
+config:
+  target: "http://localhost:3000"
+  plugins:
+    ensure: {} # Falla automáticamente el proceso si no se cumplen los acuerdos de nivel de servicio (SLA)
+  phases:
+    - duration: 20
+      arrivalRate: 5
+      name: "1. 🧪 Fase de Calentamiento (Tráfico Base)"
+    - duration: 30
+      arrivalRate: 15
+      rampTo: 50
+      name: "2. 🧪 Fase de Saturación Máxima (Pico de Carga)"
+  ensure:
+    thresholds:
+      - "http.response_time.p99": 200 # El 99% de las transacciones debe procesarse en < 200ms (Comportamiento temporal)
+    maxErrorRate: 1 # No se permite más del 1% de caídas del socket HTTP
+
+scenarios:
+  - name: "Inundación transaccional perimetral (Payloads Mixtos Zod)"
+    flow:
+      # === Casos "buenos" (deben aceptarse) ===
+      # 1. Datos correctos -> Evalúa la tubería completa refactorizada
+      - post:
+          url: "/api/v1/empleados"
+          json:
+            nombre: "Andrés Mendoza"
+            cargo: "Software Architect"
+            departamento: "I+D"
+            sueldo: 4200
+          capture:
+            json: "$.data.id"
+            as: "employeeId"
+      - think: 1
+      # 2. Listado -> confirma que el empleado recién creado es visible
+      - get:
+          url: "/api/v1/empleados"
+      - think: 1
+      # 3. Consulta por el id capturado -> lectura individual válida
+      - get:
+          url: "/api/v1/empleados/{{ employeeId }}"
+      - think: 1
+      # 4. Actualización válida -> solo cambia el sueldo, el resto queda igual
+      - put:
+          url: "/api/v1/empleados/{{ employeeId }}"
+          json:
+            sueldo: 4800
+      - think: 1
+
+      # === Casos "malos" (deben rechazarse con 400) ===
+      # 1. Datos corruptos -> Evalúa el rechazo inmediato y óptimo del DTO Zod
+      - post:
+          url: "/api/v1/empleados"
+          json:
+            nombre: "Al"
+            cargo: "Dev"
+            departamento: "TI"
+            sueldo: -500 # Campo ilegal
+      - think: 1
+      # 2. Id con formato inválido -> lo rechaza idParamSchema antes de tocar Mongo
+      - get:
+          url: "/api/v1/empleados/no-es-un-id"
+      - think: 1
+      # 3. Campo obligatorio faltante -> createEmployeeSchema exige los 4 campos
+      - post:
+          url: "/api/v1/empleados"
+          json:
+            nombre: "Empleado Incompleto"
+            cargo: "Dev"
+            sueldo: 3000
+      - think: 1
+      # 4. Body vacío en un update -> updateEmployeeSchema exige al menos un campo
+      - put:
+          url: "/api/v1/empleados/{{ employeeId }}"
+          json: {}
